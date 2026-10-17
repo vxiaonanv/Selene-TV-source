@@ -182,7 +182,7 @@ private fun TransparentFilterOptionItem(
     ) {
         Row(
             modifier = Modifier
-                .height(30.dp)
+                .height(26.dp)
                 .padding(horizontal = 13.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
