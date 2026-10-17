@@ -34,6 +34,8 @@ import org.moontechlab.selenetv.service.DramaCategory
 import org.moontechlab.selenetv.service.DramaDetail
 import org.moontechlab.selenetv.service.DramaItem
 import org.moontechlab.selenetv.service.ShortDramaService
+import org.moontechlab.selenetv.ui.FilterSelector
+import org.moontechlab.selenetv.ui.FilterOption
 import org.moontechlab.selenetv.ui.VideoCard
 import org.moontechlab.selenetv.ui.VideoCardSource
 import org.moontechlab.selenetv.screen.player.ShortDramaPlayer
@@ -99,16 +101,13 @@ fun ShortDramaTab(focusRequester: FocusRequester = remember { FocusRequester() }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().padding(top = 66.dp, start = 54.dp, end = 54.dp)) {
-            Text("短剧", fontSize = 24.sp, color = Color.White)
-            Spacer(Modifier.height(16.dp))
-            androidx.compose.foundation.lazy.LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(categories.size) { index ->
-                    val cat = categories[index]
-                    Button(
-                        onClick = { selected = cat },
-                        modifier = if (index == 0) Modifier.focusRequester(focusRequester) else Modifier
-                    ) { Text(cat.name) }
-                }
+            if (categories.isNotEmpty()) {
+                FilterSelector(
+                    options = categories.map { FilterOption(it.id.toString(), it.name) },
+                    selectedKey = selected?.id?.toString().orEmpty(),
+                    onSelect = { key -> selected = categories.firstOrNull { it.id.toString() == key } },
+                    focusRequester = focusRequester
+                )
             }
             Spacer(Modifier.height(20.dp))
             if (error != null) Text(error ?: "", color = Color.White)
@@ -214,10 +213,6 @@ private fun ShortDramaDetailPage(
                             modifier = Modifier.focusRequester(playFocus),
                             onClick = { onEpisode(0) }
                         ) { Text("▶  播放") }
-                        Button(onClick = {
-                            runCatching { firstEpisodeFocus.requestFocus() }
-                        }) { Text("选集") }
-                        Button(onClick = onBack) { Text("返回") }
                     }
                 }
                 AsyncImage(
