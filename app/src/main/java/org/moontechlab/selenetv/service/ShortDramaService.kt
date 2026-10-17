@@ -10,7 +10,8 @@ import java.net.URLEncoder
 
 data class DramaCategory(val id: Int, val name: String)
 data class DramaItem(val id: String, val name: String, val cover: String, val episodeCount: Int = 0)
-data class DramaDetail(val id: String, val name: String, val cover: String, val description: String, val episodeCount: Int)
+data class DramaDetail(val id: String, val name: String, val cover: String, val description: String, val episodeCount: Int, val episodes: List<DramaEpisode> = emptyList())
+data class DramaEpisode(val title: String, val url: String)
 
 /** Reads the short-drama API from the configured LunaTV server, not from a hardcoded provider. */
 object ShortDramaService {
@@ -50,16 +51,32 @@ object ShortDramaService {
     suspend fun detail(id: String): DramaDetail = withContext(Dispatchers.IO) {
         val encoded = URLEncoder.encode(id, "UTF-8")
         val d = JSONObject(request("/api/shortdrama/detail?id=$encoded"))
+        val entries = d.optJSONArray("episodes") ?: JSONArray()
+        val episodes = (0 until entries.length()).map { index ->
+            val entry = entries.optJSONObject(index)
+            DramaEpisode(
+                title = entry?.optString("title")?.takeIf { it.isNotBlank() }
+                    ?: "第${index + 1}集",
+                url = entry?.optString("url").orEmpty()
+            )
+        }
+        fun first(vararg keys: String): String =
+            keys.firstNotNullOfOrNull { key -> d.optString(key).takeIf { it.isNotBlank() } }.orEmpty()
         DramaDetail(
-            id = d.optString("id", id),
-            name = d.optString("title"),
-            cover = d.optString("poster"),
-            description = d.optString("desc"),
-            episodeCount = d.optJSONArray("episodes")?.length() ?: 0
+            id = first("id").ifBlank { id },
+            name = first("name", "title"),
+            cover = first("cover", "poster"),
+            description = first("description", "desc"),
+            episodeCount = maxOf(d.optInt("totalEpisodes"), d.optInt("episode_count"), episodes.size, 1),
+            episodes = episodes
         )
     }
 
-    suspend fun playUrl(id: String, episodeIndex: Int, name: String): String = withContext(Dispatchers.IO) {
+    suspend fun playUrl(id: String, episodeIndex: Int, name: String, directUrl: String = ""): String = withContext(Dispatchers.IO) {
+        if (directUrl.isNotBlank()) {
+            val base = AppDataService.getServerUrlSync()?.trimEnd('/') ?: ""
+            return@withContext if (directUrl.startsWith("/")) base + directUrl else directUrl
+        }
         val encodedId = URLEncoder.encode(id, "UTF-8")
         val encodedName = URLEncoder.encode(name, "UTF-8")
         val result = JSONObject(request("/api/shortdrama/parse?id=$encodedId&episode=${episodeIndex + 1}&name=$encodedName"))
