@@ -70,7 +70,7 @@ fun TabSwitcher(
             TabItem("series", "剧集", Icons.Default.Tv),
             TabItem("anime", "动漫", Icons.Default.Pets),
             TabItem("show", "综艺", Icons.Default.Stars),
-            TabItem("live", "直播", Icons.Default.RadioButtonChecked),
+            TabItem("shortdrama", "短剧", Icons.Default.SmartDisplay),
             TabItem("settings", "设置", Icons.Default.Settings)
         )
     }
