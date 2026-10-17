@@ -197,8 +197,9 @@ fun ShortDramaPlayer(detail: DramaDetail, initialEpisode: Int, onExit: () -> Uni
                     val trackWidth = maxWidth
                     Box(Modifier.fillMaxWidth().height(4.dp).align(Alignment.Center)
                         .clip(CircleShape).background(Color.White.copy(alpha = 0.28f)))
-                    Box(Modifier.width(trackWidth * fraction).height(4.dp).align(Alignment.CenterStart)
-                        .offset(y = 14.dp).clip(CircleShape).background(Color.White))
+                    Box(Modifier.width(trackWidth * fraction).height(4.dp).align(Alignment.Center)
+                        .offset(x = -(trackWidth * (1f - fraction) / 2f))
+                        .clip(CircleShape).background(Color.White))
                     if (scrubberFocused) {
                         Box(
                             Modifier.align(Alignment.CenterStart)
