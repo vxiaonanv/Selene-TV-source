@@ -124,7 +124,7 @@ class BangumiService private constructor(private val context: Context) {
         initCache()
         
         // 接口级缓存：缓存原始 API 数组，固定键，不含参数
-        val cacheKey = "bangumi_calendar_raw_v1"
+        val cacheKey = "bangumi_calendar_raw_v2_${bangumiHost()}"
         
         // 如果不强制从源获取，先尝试读取原始数组缓存
         if (!forceSource) {
@@ -151,31 +151,35 @@ class BangumiService private constructor(private val context: Context) {
                 "Accept" to "application/json"
             )
             
-            val (statusCode, responseBody) = httpGet("https://${bangumiHost()}/calendar", headers)
-            
-            if (statusCode == HttpURLConnection.HTTP_OK) {
+            // CDN 的 /calendar 可能未回源或返回非预期内容；失败时回退官方 API。
+            val hosts = listOf(bangumiHost(), "api.bgm.tv").distinct()
+            var lastError = "未知错误"
+            for (host in hosts) {
                 try {
-                    val responseData = json.decodeFromString<List<BangumiCalendarResponse>>(responseBody)
-                    
-                    // 缓存原始 API 数组（缓存一天）
-                    try {
-                        val jsonData = json.encodeToString(responseData)
-                        cacheService.set(cacheKey, jsonData, 24 * 60 * 60 * 1000L)
-                    } catch (cacheError: Exception) {
-                        Log.d(TAG, "缓存 Bangumi 数据失败: ${cacheError.message}")
+                    val (statusCode, responseBody) = httpGet("https://$host/calendar", headers)
+                    if (statusCode != HttpURLConnection.HTTP_OK) {
+                        lastError = "$host HTTP $statusCode"
+                        Log.w(TAG, "Bangumi 日历请求失败: $lastError")
+                        continue
                     }
-                    
-                    // 查找目标星期的数据
-                    val targetDay = responseData.find { it.weekday.id == weekday }
-                    val items = targetDay?.items ?: emptyList()
-                    
-                    ApiResponse.Success(items, statusCode)
-                } catch (parseError: Exception) {
-                    ApiResponse.Error("Bangumi 数据解析失败: ${parseError.message}")
+                    val responseData = json.decodeFromString<List<BangumiCalendarResponse>>(responseBody)
+                    if (responseData.isEmpty()) {
+                        lastError = "$host 返回空日历"
+                        continue
+                    }
+                    try {
+                        cacheService.set(cacheKey, json.encodeToString(responseData), 24 * 60 * 60 * 1000L)
+                    } catch (cacheError: Exception) {
+                        Log.d(TAG, "缓存 Bangumi 日历失败: ${cacheError.message}")
+                    }
+                    val items = responseData.find { it.weekday.id == weekday }?.items ?: emptyList()
+                    return ApiResponse.Success(items, statusCode)
+                } catch (sourceError: Exception) {
+                    lastError = "$host: ${sourceError.message}"
+                    Log.w(TAG, "Bangumi 日历线路异常，尝试备用线路: $lastError")
                 }
-            } else {
-                ApiResponse.Error("获取 Bangumi 日历失败: $statusCode", statusCode)
             }
+            ApiResponse.Error("获取 Bangumi 日历失败（已尝试 CDN 与官方接口）: $lastError")
         } catch (error: Exception) {
             if (error is java.net.SocketTimeoutException) {
                 ApiResponse.Error("Bangumi 数据请求超时")
