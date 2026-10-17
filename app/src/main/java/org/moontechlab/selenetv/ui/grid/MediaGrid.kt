@@ -62,7 +62,7 @@ import org.moontechlab.selenetv.ui.VideoCardStyle
 const val GRID_COLUMNS = 6              // 每行6列
 const val GRID_CARD_WIDTH = 120        // 卡片宽度 120dp
 const val GRID_CARD_HEIGHT = 180       // 卡片封面高度 180dp (2:3 比例)
-const val GRID_ROW_GAP = 28            // 行间距 28dp
+const val GRID_ROW_GAP = 18            // 行间距 28dp
 const val GRID_ROW_HEIGHT = 202        // 行高 = 180 + 22 (标题区域)
 const val GRID_PAGE_LIMIT = 25         // 每页数据量
 const val GRID_RENDER_BUFFER = 3       // 缓冲行数
@@ -116,7 +116,7 @@ fun <T> MediaGridScaffold(
     // 行高 (px)
     val rowHeightPx = with(density) { GRID_ROW_HEIGHT.dp.toPx() }
     val rowGapPx = with(density) { GRID_ROW_GAP.dp.toPx() }
-    val topSpacerPx = with(density) { 64.dp.toPx() } // TabSwitcher 空间
+    val topSpacerPx = with(density) { 56.dp.toPx() } // TabSwitcher 空间
 
     // 计算滚动到指定行使其居中的目标位置
     fun calculateScrollTarget(rowIndex: Int): Int {
@@ -172,7 +172,7 @@ fun <T> MediaGridScaffold(
                     .padding(bottom = bottomPadding)
             ) {
                 // 顶部留出 TabSwitcher 的空间
-                Spacer(modifier = Modifier.height(64.dp))
+                Spacer(modifier = Modifier.height(56.dp))
 
                 // 筛选区域
                 Box(
@@ -184,7 +184,7 @@ fun <T> MediaGridScaffold(
                 }
 
                 // 筛选区域和内容区域之间的间距
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // 内容区域 (6列网格)
                 MediaGridContent(
