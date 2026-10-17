@@ -42,6 +42,7 @@ fun ShortDramaTab(focusRequester: FocusRequester = remember { FocusRequester() }
     var error by remember { mutableStateOf<String?>(null) }
     var detail by remember { mutableStateOf<DramaDetail?>(null) }
     var playing by remember { mutableStateOf(false) }
+    var episode by remember { mutableIntStateOf(0) }
     val gridState = rememberLazyGridState()
 
     LaunchedEffect(Unit) {
@@ -152,12 +153,12 @@ fun ShortDramaTab(focusRequester: FocusRequester = remember { FocusRequester() }
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(d.episodeCount) { index ->
-                            Button(onClick = { playing = true }) { Text("${index + 1}") }
+                            Button(onClick = { episode = index; playing = true }) { Text("${index + 1}") }
                         }
                     }
                 }
                 if (playing) {
-                    ShortDramaPlayer(d, onExit = { playing = false })
+                    ShortDramaPlayer(d, episode, onExit = { playing = false })
                 }
             }
         }
