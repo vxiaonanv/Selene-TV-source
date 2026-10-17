@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -22,12 +24,14 @@ fun ShortDramaPlayer(detail: DramaDetail, initialEpisode: Int, onExit: () -> Uni
     var episode by remember(detail.id) { mutableIntStateOf(initialEpisode) }
     var error by remember { mutableStateOf<String?>(null) }
     var controls by remember { mutableStateOf(true) }
+    val playFocus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { delay(150); runCatching { playFocus.requestFocus() } }
 
     BackHandler { onExit() }
     LaunchedEffect(detail.id, episode) {
         error = null
         try {
-            val url = ShortDramaService.playUrl(detail.id, episode, detail.name)
+            val url = ShortDramaService.playUrl(detail.id, episode, detail.name, detail.episodes.getOrNull(episode)?.url.orEmpty())
             player.load(url, 0L)
         } catch (e: Exception) {
             error = e.message ?: "解析播放地址失败"
@@ -49,12 +53,12 @@ fun ShortDramaPlayer(detail: DramaDetail, initialEpisode: Int, onExit: () -> Uni
         player.VideoSurface(Modifier.fillMaxSize())
         if (controls || error != null || player.error != null) {
             Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Color(0xCC111111)).padding(20.dp)) {
-                Text("${detail.name} · 第${episode + 1}集 / ${detail.episodeCount}集", color = Color.White)
+                Text("${detail.name} · ${detail.episodes.getOrNull(episode)?.title ?: "第${episode + 1}集"} / ${detail.episodeCount}集", color = Color.White)
                 error?.let { Text(it, color = Color.Red) }
                 player.error?.let { Text(it, color = Color.Red) }
                 Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                     Button(onClick = { if (episode > 0) episode-- }) { Text("上一集") }
-                    Button(onClick = { player.togglePlay() }) { Text(if (player.isPlaying) "暂停" else "播放") }
+                    Button(modifier = Modifier.focusRequester(playFocus), onClick = { player.togglePlay() }) { Text(if (player.isPlaying) "暂停" else "播放") }
                     Button(onClick = { if (episode + 1 < detail.episodeCount) episode++ }) { Text("下一集") }
                     Button(onClick = onExit) { Text("返回详情") }
                 }
