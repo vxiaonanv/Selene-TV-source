@@ -52,7 +52,15 @@ fun ShortDramaPlayer(detail: DramaDetail, initialEpisode: Int, onExit: () -> Uni
     val speedFocus = remember { FocusRequester() }
 
     fun wake() { controls = true; interaction++ }
-    BackHandler { onExit() }
+    var exitArmed by remember { mutableStateOf(false) }
+    LaunchedEffect(exitArmed) { if (exitArmed) { delay(2200); exitArmed = false } }
+    BackHandler(enabled = !aspectOpen && !speedOpen) {
+        when {
+            controls -> { controls = false; exitArmed = false }
+            exitArmed -> onExit()
+            else -> exitArmed = true
+        }
+    }
     LaunchedEffect(resizeMode) { player.resizeMode = resizeMode }
     LaunchedEffect(playbackSpeed) { player.speed = playbackSpeed }
     LaunchedEffect(Unit) {
