@@ -1540,7 +1540,7 @@ private fun VersionColophon(
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             // 绿色品牌点（唯一点缀色）
             Box(
@@ -1553,12 +1553,13 @@ private fun VersionColophon(
                 text = "SELENE TV",
                 fontSize = 11.sp,
                 fontWeight = FontWeight.Medium,
-                letterSpacing = 2.sp,
+                letterSpacing = 0.5.sp,
                 color = TextGray
             )
             Text(
                 text = "v$versionName",
-                fontSize = 11.sp,
+                maxLines = 1,
+                fontSize = 10.sp,
                 fontWeight = FontWeight.Medium,
                 color = Color(0xFF4CAF50).copy(alpha = 0.9f)
             )
