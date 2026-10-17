@@ -3,9 +3,9 @@ package org.moontechlab.selenetv.screen.tab
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.focus.focusGroup
+import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.focusProperties
-import androidx.compose.ui.focus.focusable
+import androidx.compose.foundation.focusable
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
