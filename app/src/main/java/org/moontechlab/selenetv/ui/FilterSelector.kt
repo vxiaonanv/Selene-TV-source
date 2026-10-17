@@ -152,7 +152,7 @@ private fun FilterOptionItem(
     ) {
         Box(
             modifier = Modifier
-                .height(30.dp)
+                .height(26.dp)
                 .padding(horizontal = 13.dp),
             contentAlignment = Alignment.Center
         ) {
