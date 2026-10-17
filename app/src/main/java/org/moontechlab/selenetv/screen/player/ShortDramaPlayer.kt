@@ -31,7 +31,7 @@ fun ShortDramaPlayer(detail: DramaDetail, initialEpisode: Int, onExit: () -> Uni
     LaunchedEffect(detail.id, episode) {
         error = null
         try {
-            val url = ShortDramaService.playUrl(detail.id, episode, detail.name)
+            val url = ShortDramaService.playUrl(detail.id, episode, detail.name, detail.episodes.getOrNull(episode)?.url.orEmpty())
             player.load(url, 0L)
         } catch (e: Exception) {
             error = e.message ?: "解析播放地址失败"
@@ -53,7 +53,7 @@ fun ShortDramaPlayer(detail: DramaDetail, initialEpisode: Int, onExit: () -> Uni
         player.VideoSurface(Modifier.fillMaxSize())
         if (controls || error != null || player.error != null) {
             Column(Modifier.align(Alignment.BottomCenter).fillMaxWidth().background(Color(0xCC111111)).padding(20.dp)) {
-                Text("${detail.name} · 第${episode + 1}集 / ${detail.episodeCount}集", color = Color.White)
+                Text("${detail.name} · ${detail.episodes.getOrNull(episode)?.title ?: "第${episode + 1}集"} / ${detail.episodeCount}集", color = Color.White)
                 error?.let { Text(it, color = Color.Red) }
                 player.error?.let { Text(it, color = Color.Red) }
                 Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
