@@ -119,7 +119,7 @@ fun TabSwitcher(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 16.dp, bottom = 8.dp, start = 24.dp, end = 24.dp),
+            .padding(top = 10.dp, bottom = 5.dp, start = 24.dp, end = 24.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
