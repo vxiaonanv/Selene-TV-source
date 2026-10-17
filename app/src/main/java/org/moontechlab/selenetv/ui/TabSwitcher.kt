@@ -133,7 +133,7 @@ fun TabSwitcher(
                     color = Color.White.copy(alpha = 0.08f),
                     shape = RoundedCornerShape(22.dp)
                 )
-                .padding(2.4.dp)
+                .padding(2.64.dp)
                 .focusRequester(focusRequester)
                 .onFocusChanged { focusState ->
                     // 通知父组件焦点状态变化
@@ -227,7 +227,7 @@ private fun TabButton(
     Surface(
         onClick = onTabClick,
         modifier = Modifier
-            .height(31.dp)
+            .height(34.1.dp)
             .focusRequester(focusRequester)
             .onFocusChanged { focusState ->
                 isFocused = focusState.isFocused
@@ -277,18 +277,18 @@ private fun TabButton(
         Row(
             modifier = Modifier
                 .padding(
-                    horizontal = if (tab.isIconOnly) 10.dp else 13.dp,
+                    horizontal = if (tab.isIconOnly) 11.dp else 14.3.dp,
                     vertical = 0.dp
                 )
                 .fillMaxHeight(),
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            horizontalArrangement = Arrangement.spacedBy(5.5.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 图标
             Icon(
                 imageVector = tab.icon,
                 contentDescription = tab.label,
-                modifier = Modifier.size(14.dp),
+                modifier = Modifier.size(15.4.dp),
                 tint = contentColor
             )
             
@@ -296,7 +296,7 @@ private fun TabButton(
             if (!tab.isIconOnly) {
                 Text(
                     text = tab.label,
-                    fontSize = 13.sp,
+                    fontSize = 14.3.sp,
                     fontWeight = FontWeight.SemiBold, // 600
                     color = contentColor
                 )
