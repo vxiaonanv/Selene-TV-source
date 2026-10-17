@@ -227,7 +227,7 @@ fun HomeScreen(navController: androidx.navigation.NavController) {
                             "series" -> tvCategoryFocusRequester.requestFocus()
                             "anime" -> animeCategoryFocusRequester.requestFocus()
                             "show" -> showCategoryFocusRequester.requestFocus()
-                            "live" -> liveFocusRequester.requestFocus()
+                            "shortdrama" -> liveFocusRequester.requestFocus()
                             "settings" -> settingsFocusRequester.requestFocus()
                         }
                     },
@@ -281,10 +281,8 @@ fun HomeScreen(navController: androidx.navigation.NavController) {
                     scrollState = scrollState,
                     onVideoSelected = openDetail,
                 )
-                "live" -> LiveTab(
+                "shortdrama" -> ShortDramaTab(
                     focusRequester = liveFocusRequester,
-                    scrollState = scrollState,
-                    onChannelClick = { liveLaunch = it },
                 )
                 "settings" -> key(homeRefreshKey) {
                     SettingsTab(
