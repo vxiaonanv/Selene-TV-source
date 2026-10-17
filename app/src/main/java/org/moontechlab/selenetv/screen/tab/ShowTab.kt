@@ -470,8 +470,8 @@ private fun ShowFilterSection(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 11.dp, bottom = 18.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .padding(top = 6.dp, bottom = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // 分类行
         GridFilterRow(
