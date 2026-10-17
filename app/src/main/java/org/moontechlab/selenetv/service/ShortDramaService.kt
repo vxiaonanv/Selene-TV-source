@@ -23,7 +23,7 @@ object ShortDramaService {
         conn.setRequestProperty("Accept", "application/json")
         AppDataService.getCookiesSync()?.let { conn.setRequestProperty("Cookie", it) }
         return try {
-            if (conn.responseCode !in 200..299) error("短剧接口 HTTP ${conn.responseCode}")
+            if (conn.responseCode !in 200..299) error("短剧接口 HTTP ${conn.responseCode}：$path；实际地址：${conn.url}")
             conn.inputStream.bufferedReader().use { it.readText() }
         } finally { conn.disconnect() }
     }
