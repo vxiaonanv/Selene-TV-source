@@ -147,7 +147,7 @@ fun ShortDramaPlayer(detail: DramaDetail, initialEpisode: Int, onExit: () -> Uni
                     .background(Brush.verticalGradient(listOf(Color.Transparent, Color(0xE8000000))))
                     .padding(start = 56.dp, end = 56.dp, top = 56.dp, bottom = 26.dp)
             ) {
-                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().onFocusChanged { controlsRowFocused = it.hasFocus }, verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         "${detail.name} · ${detail.episodes.getOrNull(episode)?.title ?: "第${episode + 1}集"}",
                         color = Color.White, fontSize = 25.sp,
