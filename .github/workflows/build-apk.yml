@@ -3,7 +3,7 @@ name: Build Selene-TV APK
 on:
   workflow_dispatch:
   push:
-    branches: [master]
+    branches: [master, feature/1.4.8-shortdrama]
     paths:
       - 'app/**'
       - '.github/workflows/build-apk.yml'
@@ -30,6 +30,6 @@ jobs:
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: Selene-TV-v1.4.7-APKs
+          name: Selene-TV-${{ github.ref_name }}-APKs
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
