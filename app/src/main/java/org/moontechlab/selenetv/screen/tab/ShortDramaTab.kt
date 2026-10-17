@@ -1,6 +1,16 @@
 package org.moontechlab.selenetv.screen.tab
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.focus.focusGroup
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusable
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
+import coil.compose.AsyncImage
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -138,29 +148,110 @@ fun ShortDramaTab(focusRequester: FocusRequester = remember { FocusRequester() }
         }
 
         detail?.let { d ->
-            BackHandler(enabled = !playing) { detail = null }
-            Box(Modifier.fillMaxSize().background(Color(0xFF12121A))) {
-                Column(Modifier.fillMaxSize().padding(55.dp)) {
-                    Text(d.name, color = Color.White, fontSize = 27.sp)
-                    Spacer(Modifier.height(14.dp))
-                    Text(d.description.replace(Regex("<[^>]+>"), ""), color = Color.LightGray, fontSize = 15.sp)
-                    Spacer(Modifier.height(20.dp))
-                    Text("共 ${d.episodeCount} 集 · 选择集数播放", color = Color.White)
+            Dialog(
+                onDismissRequest = { if (!playing) detail = null },
+                properties = DialogProperties(usePlatformDefaultWidth = false)
+            ) {
+                ShortDramaDetailPage(
+                    detail = d,
+                    playing = playing,
+                    episode = episode,
+                    onEpisode = { index -> episode = index; playing = true },
+                    onBack = { detail = null },
+                    onPlayerExit = { playing = false }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShortDramaDetailPage(
+    detail: DramaDetail,
+    playing: Boolean,
+    episode: Int,
+    onEpisode: (Int) -> Unit,
+    onBack: () -> Unit,
+    onPlayerExit: () -> Unit
+) {
+    val playFocus = remember(detail.id) { FocusRequester() }
+    val firstEpisodeFocus = remember(detail.id) { FocusRequester() }
+    val gridState = rememberLazyGridState()
+    LaunchedEffect(detail.id, playing) {
+        if (!playing) {
+            delay(120)
+            runCatching { playFocus.requestFocus() }
+        }
+    }
+    BackHandler(enabled = !playing) { onBack() }
+    Box(
+        Modifier.fillMaxSize()
+            .background(Color(0xFF121216))
+            .focusGroup()
+    ) {
+        Column(Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = 58.dp, top = 52.dp, end = 50.dp, bottom = 35.dp),
+                horizontalArrangement = Arrangement.spacedBy(36.dp)
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        detail.name, color = Color.White, fontSize = 32.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                     Spacer(Modifier.height(12.dp))
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(8),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(d.episodeCount) { index ->
-                            Button(onClick = { episode = index; playing = true }) { Text("${index + 1}") }
-                        }
+                    Text("短剧 · 共 ${detail.episodeCount} 集", color = Color.LightGray, fontSize = 14.sp)
+                    Spacer(Modifier.height(24.dp))
+                    Text(
+                        detail.description.replace(Regex("<[^>]+>"), "").ifBlank { "暂无简介" },
+                        color = Color.LightGray, fontSize = 15.sp,
+                        maxLines = 5, overflow = TextOverflow.Ellipsis
+                    )
+                    Spacer(Modifier.height(36.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Button(
+                            modifier = Modifier.focusRequester(playFocus),
+                            onClick = { onEpisode(0) }
+                        ) { Text("▶  播放") }
+                        Button(onClick = {
+                            runCatching { firstEpisodeFocus.requestFocus() }
+                        }) { Text("选集") }
+                        Button(onClick = onBack) { Text("返回") }
                     }
                 }
-                if (playing) {
-                    ShortDramaPlayer(d, episode, onExit = { playing = false })
+                AsyncImage(
+                    model = detail.cover,
+                    contentDescription = detail.name,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.size(width = 200.dp, height = 300.dp)
+                        .background(Color.DarkGray)
+                )
+            }
+            Text(
+                "选集   ${detail.episodeCount} 集",
+                color = Color.White, fontSize = 22.sp,
+                modifier = Modifier.padding(start = 58.dp, bottom = 16.dp)
+            )
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(8),
+                state = gridState,
+                modifier = Modifier.fillMaxWidth().weight(1f)
+                    .padding(start = 58.dp, end = 58.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(bottom = 35.dp)
+            ) {
+                items(detail.episodeCount) { index ->
+                    Button(
+                        modifier = if (index == 0) Modifier.focusRequester(firstEpisodeFocus) else Modifier,
+                        onClick = { onEpisode(index) }
+                    ) { Text("第${index + 1}集") }
                 }
             }
+        }
+        if (playing) {
+            ShortDramaPlayer(detail, episode, onExit = onPlayerExit)
         }
     }
 }
