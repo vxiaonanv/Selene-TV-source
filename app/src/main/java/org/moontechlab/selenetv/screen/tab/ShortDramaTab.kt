@@ -32,6 +32,10 @@ import androidx.compose.ui.unit.sp
 import androidx.tv.material3.Text
 import androidx.tv.material3.Button
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.moontechlab.selenetv.data.Repositories
+import org.moontechlab.selenetv.model.PlayRecord
 import org.moontechlab.selenetv.model.VideoInfo
 import org.moontechlab.selenetv.service.DramaCategory
 import org.moontechlab.selenetv.service.DramaDetail
@@ -232,6 +236,37 @@ private fun ShortDramaDetailPage(
     var pickerOpen by remember(detail.id) { mutableStateOf(false) }
     val detailScroll = rememberScrollState()
     val detailScope = rememberCoroutineScope()
+    var favorite by remember(detail.id) { mutableStateOf(false) }
+    var playRecord by remember(detail.id) { mutableStateOf<PlayRecord?>(null) }
+    LaunchedEffect(detail.id, playing) {
+        if (!playing) {
+            try {
+                val saved = withContext(Dispatchers.IO) {
+                    val repository = Repositories.userData()
+                    Pair(repository.getFavorites().any { it.source == "shortdrama" && it.id == detail.id },
+                         repository.getPlayRecords()["shortdrama+" + detail.id])
+                }
+                favorite = saved.first
+                playRecord = saved.second
+            } catch (_: Exception) {}
+        }
+    }
+    fun toggleFavorite() {
+        val previous = favorite
+        favorite = !previous
+        detailScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    if (previous) Repositories.userData().unfavorite("shortdrama", detail.id)
+                    else Repositories.userData().addFavorite("shortdrama", detail.id, mapOf<String, Any?>(
+                        "title" to detail.name, "source_name" to "短剧", "year" to "",
+                        "cover" to detail.cover, "total_episodes" to detail.episodeCount,
+                        "save_time" to System.currentTimeMillis(), "origin" to ""
+                    ))
+                }
+            } catch (_: Exception) { favorite = previous }
+        }
+    }
     val detailSource = remember(detail) {
         SearchResult(id = detail.id, title = detail.name, poster = detail.cover,
             source = "shortdrama", sourceName = "短剧", episodes = detail.episodes.map { it.url },
@@ -264,10 +299,17 @@ private fun ShortDramaDetailPage(
                 ),
                 actionsRow = {
                     DetailActionButtons(
-                        showContinue = false, showPlay = true, showDelete = false,
-                        showFavorite = false, isFavorite = false, sourceName = "短剧",
-                        onContinue = { onEpisode(0) }, onPlay = { onEpisode(0) },
-                        onDelete = {}, onToggleFavorite = {},
+                        showContinue = playRecord != null, showPlay = true, showDelete = playRecord != null,
+                        showFavorite = true, isFavorite = favorite, sourceName = "短剧",
+                        onContinue = { onEpisode(((playRecord?.index ?: 1) - 1).coerceIn(0, (detail.episodeCount - 1).coerceAtLeast(0))) },
+                        onPlay = { if (playRecord != null) onEpisode(0) else pickerOpen = true },
+                        onDelete = {
+                            playRecord = null
+                            detailScope.launch {
+                                try { withContext(Dispatchers.IO) { Repositories.userData().deletePlayRecord("shortdrama", detail.id) } } catch (_: Exception) {}
+                            }
+                        },
+                        onToggleFavorite = { toggleFavorite() },
                         primaryFocusRequester = playFocus
                     )
                 }
@@ -276,7 +318,7 @@ private fun ShortDramaDetailPage(
             DetailSourcesSection(
                 sources = listOf(detailSource),
                 selectedSourceKey = sourceKey(detailSource),
-                playRecords = emptyMap(),
+                playRecords = playRecord?.let { mapOf(("shortdrama+" + detail.id) to it) } ?: emptyMap(),
                 progress = null,
                 complete = true,
                 onSelect = { pickerOpen = true },
@@ -328,7 +370,8 @@ private fun ShortDramaDetailPage(
                     ),
                     sources = listOf(source),
                     selectedSourceKey = sourceKey(source),
-                    episodeIndex = episode
+                    episodeIndex = episode,
+                    startPositionMs = if (playRecord?.index == episode + 1) (playRecord?.playTime ?: 0L) * 1000L else 0L
                 ),
                 onExit = onPlayerExit
             ) else Box(Modifier.fillMaxSize().background(Color.Black), contentAlignment = Alignment.Center) {
