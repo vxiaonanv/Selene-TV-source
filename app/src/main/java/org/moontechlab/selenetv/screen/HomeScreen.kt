@@ -84,6 +84,7 @@ fun HomeScreen(navController: androidx.navigation.NavController) {
     val animeCategoryFocusRequester = remember { FocusRequester() }
     val showCategoryFocusRequester = remember { FocusRequester() }
     val liveFocusRequester = remember { FocusRequester() }
+    val shortDramaCategoryFocusRequester = remember { FocusRequester() }
     val settingsFocusRequester = remember { FocusRequester() }
     
     // TabSwitcher 的 FocusRequester
@@ -227,7 +228,7 @@ fun HomeScreen(navController: androidx.navigation.NavController) {
                             "series" -> tvCategoryFocusRequester.requestFocus()
                             "anime" -> animeCategoryFocusRequester.requestFocus()
                             "show" -> showCategoryFocusRequester.requestFocus()
-                            "shortdrama" -> liveFocusRequester.requestFocus()
+                            "shortdrama" -> shortDramaCategoryFocusRequester.requestFocus()
                             "settings" -> settingsFocusRequester.requestFocus()
                         }
                     },
@@ -282,7 +283,7 @@ fun HomeScreen(navController: androidx.navigation.NavController) {
                     onVideoSelected = openDetail,
                 )
                 "shortdrama" -> ShortDramaTab(
-                    focusRequester = liveFocusRequester,
+                    focusRequester = shortDramaCategoryFocusRequester,
                 )
                 "settings" -> key(homeRefreshKey) {
                     SettingsTab(
