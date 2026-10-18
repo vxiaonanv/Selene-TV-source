@@ -3,6 +3,9 @@ package org.moontechlab.selenetv.screen.tab
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.foundation.focusable
@@ -184,6 +187,8 @@ private fun ShortDramaDetailPage(
 ) {
     val playFocus = remember(detail.id) { FocusRequester() }
     var pickerOpen by remember(detail.id) { mutableStateOf(false) }
+    val detailScroll = rememberScrollState()
+    val detailScope = rememberCoroutineScope()
     val detailSource = remember(detail) {
         SearchResult(id = detail.id, title = detail.name, poster = detail.cover,
             source = "shortdrama", sourceName = "短剧", episodes = detail.episodes.map { it.url },
@@ -198,10 +203,10 @@ private fun ShortDramaDetailPage(
     BackHandler(enabled = !playing && !pickerOpen) { onBack() }
     Box(
         Modifier.fillMaxSize()
-            .background(Color(0xFF121216))
+            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF0A0A0A), Color(0xFF1A1A1A), Color(0xFF0F0F0F), Color(0xFF050505))))
             .focusGroup()
     ) {
-        Column(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize().verticalScroll(detailScroll)) {
             DetailHero(
                 entry = DetailEntry.History(
                     source = "shortdrama", id = detail.id, searchTitle = detail.name,
@@ -224,6 +229,7 @@ private fun ShortDramaDetailPage(
                     )
                 }
             )
+            Box(Modifier.onFocusChanged { if (it.hasFocus) detailScope.launch { detailScroll.animateScrollTo(detailScroll.maxValue) } }) {
             DetailSourcesSection(
                 sources = listOf(detailSource),
                 selectedSourceKey = sourceKey(detailSource),
@@ -234,6 +240,7 @@ private fun ShortDramaDetailPage(
                 onPlaySelected = { pickerOpen = true },
                 onSearch = { pickerOpen = true }
             )
+            }
             EpisodePickerDialog(
                 visible = pickerOpen,
                 sourceName = detail.name,
