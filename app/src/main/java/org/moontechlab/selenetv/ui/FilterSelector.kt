@@ -50,7 +50,8 @@ fun FilterSelector(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester = remember { FocusRequester() },
-    directFocusToSelected: Boolean = false
+    directFocusToSelected: Boolean = false,
+    onFocusEntered: (() -> Unit)? = null
 ) {
     // 为每个选项创建 FocusRequester
     val focusRequesters = remember(options) {
@@ -73,6 +74,7 @@ fun FilterSelector(
                 if (!hadFocus && focusState.hasFocus) {
                     (if (directFocusToSelected) focusRequester else focusRequesters[selectedKey])?.requestFocus()
                 }
+                if (!hadFocus && focusState.hasFocus) onFocusEntered?.invoke()
                 hadFocus = focusState.hasFocus
             }
             .focusGroup()
