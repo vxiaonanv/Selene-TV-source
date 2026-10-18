@@ -1446,11 +1446,11 @@ private fun RemoteControlQrCode(
     }
     
     Column(
-        modifier = modifier.padding(16.dp),
+        modifier = modifier.padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         // verticalArrangement = Arrangement.Center
     ) { 
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         // 标题
         Text(
@@ -1467,13 +1467,13 @@ private fun RemoteControlQrCode(
                 bitmap = bitmap.asImageBitmap(),
                 contentDescription = "遥控器二维码",
                 modifier = Modifier
-                    .size(240.dp)
+                    .size(216.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color(0xFFE8E8E8))
                     .padding(8.dp)
             )
         } ?: Box(
-            modifier = Modifier.size(240.dp),
+            modifier = Modifier.size(216.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -1501,9 +1501,10 @@ private fun RemoteControlQrCode(
             )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         VersionColophon()
+        Spacer(modifier = Modifier.height(12.dp))
     }
 }
 
