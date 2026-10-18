@@ -1467,13 +1467,13 @@ private fun RemoteControlQrCode(
                 bitmap = bitmap.asImageBitmap(),
                 contentDescription = "遥控器二维码",
                 modifier = Modifier
-                    .size(216.dp)
+                    .size(240.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(Color(0xFFE8E8E8))
                     .padding(8.dp)
             )
         } ?: Box(
-            modifier = Modifier.size(216.dp),
+            modifier = Modifier.size(240.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
