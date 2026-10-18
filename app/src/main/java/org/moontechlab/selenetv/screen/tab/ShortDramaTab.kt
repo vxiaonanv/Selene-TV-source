@@ -18,7 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
@@ -26,6 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -174,7 +179,13 @@ fun ShortDramaTab(
                             scope.launch { gridState.scrollToItem(0) }
                         }
                     },
-                    focusRequester = focusRequester
+                    focusRequester = focusRequester,
+                    modifier = Modifier.onPreviewKeyEvent { event ->
+                        if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionDown && dramas.isNotEmpty()) {
+                            posterFocus.requestFocus()
+                            true
+                        } else false
+                    }
                 )
             }
             Spacer(Modifier.height(20.dp))
@@ -187,7 +198,7 @@ fun ShortDramaTab(
                 verticalArrangement = Arrangement.spacedBy(22.dp),
                 contentPadding = PaddingValues(bottom = 90.dp)
             ) {
-                items(dramas, key = { it.id }) { item ->
+                itemsIndexed(dramas, key = { _, item -> item.id }) { index, item ->
                     VideoCard(
                         videoInfo = VideoInfo(
                             id = item.id, source = "shortdrama", title = item.name,
@@ -197,7 +208,12 @@ fun ShortDramaTab(
                             searchTitle = item.name
                         ),
                         from = VideoCardSource.SOURCE,
-                        modifier = Modifier.then(if (item.id == (posterId ?: dramas.firstOrNull()?.id)) Modifier.focusRequester(posterFocus) else Modifier)
+                        modifier = Modifier.onPreviewKeyEvent { event ->
+                            if (index < 6 && event.type == KeyEventType.KeyDown && event.key == Key.DirectionUp) {
+                                focusRequester.requestFocus()
+                                true
+                            } else false
+                        }.then(if (item.id == (posterId ?: dramas.firstOrNull()?.id)) Modifier.focusRequester(posterFocus) else Modifier)
                             .onFocusChanged { if (it.isFocused) posterId = item.id },
                         onClick = {
                             posterId = item.id
