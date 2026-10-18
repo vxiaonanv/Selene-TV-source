@@ -252,7 +252,9 @@ fun HomeScreen(navController: androidx.navigation.NavController) {
                     .fillMaxSize()
                     .focusRequester(contentRestoreFocusRequester)
                     .focusGroup()
-                    .focusRestorer(),
+                    // 短剧分类必须由顶部导航的专用 FocusRequester 定位。
+                    // 不让内容区 focusRestorer 把上次聚焦的封面抢回来。
+                    .then(if (currentTabId == "shortdrama") Modifier else Modifier.focusRestorer()),
             ) {
             when (currentTabId) {
                 "search" -> SearchTab(
