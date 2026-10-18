@@ -44,6 +44,8 @@ import org.moontechlab.selenetv.ui.VideoCardSource
 import org.moontechlab.selenetv.screen.player.PlayerScreen
 import org.moontechlab.selenetv.screen.player.PlayerLaunch
 import org.moontechlab.selenetv.screen.detail.HeroInfo
+import org.moontechlab.selenetv.screen.detail.UnifiedDetailBackground
+import org.moontechlab.selenetv.screen.detail.UnifiedDetailScrollColumn
 import org.moontechlab.selenetv.screen.detail.DetailHero
 import org.moontechlab.selenetv.screen.detail.DetailActionButtons
 import org.moontechlab.selenetv.screen.detail.DetailSourcesSection
@@ -203,10 +205,10 @@ private fun ShortDramaDetailPage(
     BackHandler(enabled = !playing && !pickerOpen) { onBack() }
     Box(
         Modifier.fillMaxSize()
-            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(Color(0xFF0A0A0A), Color(0xFF1A1A1A), Color(0xFF0F0F0F), Color(0xFF050505))))
+            .background(UnifiedDetailBackground)
             .focusGroup()
     ) {
-        Column(Modifier.fillMaxSize().verticalScroll(detailScroll)) {
+        UnifiedDetailScrollColumn(modifier = Modifier.fillMaxSize(), scrollState = detailScroll) {
             DetailHero(
                 entry = DetailEntry.History(
                     source = "shortdrama", id = detail.id, searchTitle = detail.name,
