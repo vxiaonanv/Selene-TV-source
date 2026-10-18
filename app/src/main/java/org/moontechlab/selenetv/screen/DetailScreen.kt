@@ -378,19 +378,18 @@ fun DetailScreen(entry: DetailEntry, onBack: () -> Unit, onGoToSearch: (String) 
         val seed = testable.associate { sourceKey(it) to SourceSpeed(SpeedTestState.TESTING) }
         state = state.copy(speedTesting = true, speedResults = seed)
         speedTestJob = scope.launch {
-            val jobScope = this
-            // ConcurrentHashMap 承接 IO 线程并发回调，主线程仅用其快照刷新 UI，避免读改写竞态。
+             // ConcurrentHashMap 承接 IO 线程并发回调，主线程仅用其快照刷新 UI，避免读改写竞态。
             // UI 刷新挂在 job 自身 scope 下，随取消一并停止，避免迟到刷新覆盖最终态。
             val acc = java.util.concurrent.ConcurrentHashMap<String, SourceSpeed>(seed)
             try {
                 SpeedTestService.testAll(testable) { key, result ->
                     acc[key] = result
-                    // 每出一条结果即实时重排：已完成按分降序居前，测速中留后(原序)，失败沉底
-                    jobScope.launch(Dispatchers.Main) {
-                        val snap = HashMap(acc)
-                        val maxSpeed = SpeedTestService.maxSpeed(snap.values)
-                        val ranked = state.sources.sortedByDescending { src -> speedRank(snap[sourceKey(src)], maxSpeed) }
-                        state = state.copy(speedResults = snap, sources = ranked)
+                    // 测速期间只更新角标，不改变 LazyRow 的 item 顺序。
+                    // 焦点所在卡片在测试中移动可能导致 Compose TV 焦点失效甚至崩溃。
+                    scope.launch(Dispatchers.Main) {
+                        if (state.speedTesting) {
+                            state = state.copy(speedResults = HashMap(acc))
+                        }
                     }
                 }
                 // 全部完成：按最终分定稿排序，自动选中冠军（失败源沉底）
@@ -406,10 +405,17 @@ fun DetailScreen(entry: DetailEntry, onBack: () -> Unit, onGoToSearch: (String) 
                     speedTesting = false,
                 )
             } catch (e: CancellationException) {
-                // 用户打断：清掉未完成项（避免「测速中」角标冻结），保留已出结果，不重排、不改选中
+                // 用户取消时正常结束，不把取消异常交给 UI 层。
                 val settled = acc.filterValues { it.state != SpeedTestState.TESTING }
                 state = state.copy(speedResults = HashMap(settled), speedTesting = false)
                 throw e
+            } catch (e: Exception) {
+                // 上游解析/网络异常不能向主线程泄漏并终止 Activity。
+                android.util.Log.e("SpeedTest", "Speed test failed", e)
+                val settled = acc.mapValues { (_, result) ->
+                    if (result.state == SpeedTestState.TESTING) SourceSpeed(SpeedTestState.FAILED) else result
+                }
+                state = state.copy(speedResults = HashMap(settled), speedTesting = false)
             }
         }
     }
