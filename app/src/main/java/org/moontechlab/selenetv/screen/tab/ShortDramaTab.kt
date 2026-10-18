@@ -165,6 +165,21 @@ fun ShortDramaTab(
         }
     }
 
+    // 与电影列表一致：滚动到末尾前自动获取下一页，无需聚焦“加载更多”按钮。
+    LaunchedEffect(selected?.id) {
+        snapshotFlow {
+            Triple(
+                gridState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: -1,
+                dramas.size,
+                loading || !hasMore
+            )
+        }.collect { (lastVisible, count, unavailable) ->
+            if (!unavailable && count > 0 && lastVisible >= count - 6) {
+                loadMore()
+            }
+        }
+    }
+
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().padding(top = 66.dp, start = 54.dp, end = 54.dp)) {
             if (categories.isNotEmpty()) {
@@ -220,11 +235,6 @@ fun ShortDramaTab(
                             }
                         }
                     )
-                }
-                if (hasMore && !loading) {
-                    item {
-                        Button(onClick = { loadMore() }) { Text("加载更多") }
-                    }
                 }
             }
         }
