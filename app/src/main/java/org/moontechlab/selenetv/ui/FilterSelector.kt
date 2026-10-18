@@ -49,7 +49,8 @@ fun FilterSelector(
     selectedKey: String,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
-    focusRequester: FocusRequester = remember { FocusRequester() }
+    focusRequester: FocusRequester = remember { FocusRequester() },
+    directFocusToSelected: Boolean = false
 ) {
     // 为每个选项创建 FocusRequester
     val focusRequesters = remember(options) {
@@ -66,11 +67,11 @@ fun FilterSelector(
                 shape = RoundedCornerShape(19.dp)
             )
             .padding(2.2.dp)
-            .focusRequester(focusRequester)
+            .then(if (directFocusToSelected) Modifier else Modifier.focusRequester(focusRequester))
             .onFocusChanged { focusState ->
                 // 当组件从无焦点变为有焦点时，请求焦点到当前选中项
                 if (!hadFocus && focusState.hasFocus) {
-                    focusRequesters[selectedKey]?.requestFocus()
+                    (if (directFocusToSelected) focusRequester else focusRequesters[selectedKey])?.requestFocus()
                 }
                 hadFocus = focusState.hasFocus
             }
@@ -89,7 +90,7 @@ fun FilterSelector(
                 FilterOptionItem(
                     option = option,
                     isSelected = option.key == selectedKey,
-                    focusRequester = focusRequesters[option.key]!!,
+                    focusRequester = if (directFocusToSelected && option.key == selectedKey) focusRequester else focusRequesters[option.key]!!,
                     onSelect = { onSelect(option.key) }
                 )
             }
