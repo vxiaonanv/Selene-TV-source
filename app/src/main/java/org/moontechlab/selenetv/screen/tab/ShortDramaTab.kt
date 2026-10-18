@@ -38,7 +38,13 @@ import org.moontechlab.selenetv.ui.FilterSelector
 import org.moontechlab.selenetv.ui.FilterOption
 import org.moontechlab.selenetv.ui.VideoCard
 import org.moontechlab.selenetv.ui.VideoCardSource
-import org.moontechlab.selenetv.screen.player.ShortDramaPlayer
+import org.moontechlab.selenetv.screen.player.PlayerScreen
+import org.moontechlab.selenetv.screen.player.PlayerLaunch
+import org.moontechlab.selenetv.screen.detail.HeroInfo
+import org.moontechlab.selenetv.screen.detail.DetailHero
+import org.moontechlab.selenetv.screen.detail.sourceKey
+import org.moontechlab.selenetv.screen.DetailEntry
+import org.moontechlab.selenetv.model.SearchResult
 
 private val preferred = listOf("女频恋爱", "反转爽剧", "古装仙侠", "年代穿越", "脑洞悬疑", "现代都市", "AI短剧")
 
@@ -189,40 +195,25 @@ private fun ShortDramaDetailPage(
             .focusGroup()
     ) {
         Column(Modifier.fillMaxSize()) {
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .padding(start = 58.dp, top = 52.dp, end = 50.dp, bottom = 35.dp),
-                horizontalArrangement = Arrangement.spacedBy(36.dp)
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        detail.name, color = Color.White, fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    Text("短剧 · 共 ${detail.episodeCount} 集", color = Color.LightGray, fontSize = 14.sp)
-                    Spacer(Modifier.height(24.dp))
-                    Text(
-                        detail.description.replace(Regex("<[^>]+>"), "").ifBlank { "暂无简介" },
-                        color = Color.LightGray, fontSize = 15.sp,
-                        maxLines = 5, overflow = TextOverflow.Ellipsis
-                    )
-                    Spacer(Modifier.height(36.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        Button(
-                            modifier = Modifier.focusRequester(playFocus),
-                            onClick = { onEpisode(0) }
-                        ) { Text("▶  播放") }
-                    }
+            DetailHero(
+                entry = DetailEntry.History(
+                    source = "shortdrama", id = detail.id, searchTitle = detail.name,
+                    title = detail.name, poster = detail.cover, year = ""
+                ),
+                info = HeroInfo(
+                    title = detail.name,
+                    poster = detail.cover,
+                    genres = listOf("短剧"),
+                    subLine = "共 ${detail.episodeCount} 集",
+                    summary = detail.description.replace(Regex("<[^>]+>"), "").ifBlank { "暂无简介" }
+                ),
+                actionsRow = {
+                    Button(
+                        modifier = Modifier.focusRequester(playFocus),
+                        onClick = { onEpisode(0) }
+                    ) { Text("▶  播放") }
                 }
-                AsyncImage(
-                    model = detail.cover,
-                    contentDescription = detail.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.size(width = 200.dp, height = 300.dp)
-                        .background(Color.DarkGray)
-                )
-            }
+            )
             Text(
                 "选集   ${detail.episodeCount} 集",
                 color = Color.White, fontSize = 22.sp,
@@ -246,7 +237,32 @@ private fun ShortDramaDetailPage(
             }
         }
         if (playing) {
-            ShortDramaPlayer(detail, episode, onExit = onPlayerExit)
+            val source = remember(detail) {
+                SearchResult(
+                    id = detail.id,
+                    title = detail.name,
+                    poster = detail.cover,
+                    source = "shortdrama",
+                    sourceName = "短剧",
+                    episodes = detail.episodes.map { it.url },
+                    episodesTitles = detail.episodes.map { it.title },
+                    desc = detail.description,
+                    typeName = "短剧"
+                )
+            }
+            PlayerScreen(
+                launch = PlayerLaunch(
+                    title = detail.name,
+                    heroInfo = HeroInfo(
+                        title = detail.name, poster = detail.cover,
+                        genres = listOf("短剧"), summary = detail.description
+                    ),
+                    sources = listOf(source),
+                    selectedSourceKey = sourceKey(source),
+                    episodeIndex = episode
+                ),
+                onExit = onPlayerExit
+            )
         }
     }
 }
