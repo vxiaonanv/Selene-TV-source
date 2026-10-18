@@ -704,12 +704,7 @@ fun DetailScreen(entry: DetailEntry, onBack: () -> Unit, onGoToSearch: (String) 
         }
     }
 
-    val gradientBrush = Brush.verticalGradient(
-        0.0f to Color(0xFF0a0a0a),
-        0.4f to Color(0xFF1a1a1a),
-        0.7f to Color(0xFF0f0f0f),
-        1.0f to Color(0xFF050505),
-    )
+    val gradientBrush = org.moontechlab.selenetv.screen.detail.UnifiedDetailBackground
 
     // 不透明全屏剧照在场时，根渐变被完全遮挡 → 跳过这层全屏绘制（详情页过度绘制 ~4×→~3×，无任何视觉变化）。
     // 仅当确有剧照且已加载完成时跳过；加载中/无剧照仍用渐变兜底背景。
@@ -781,7 +776,8 @@ fun DetailScreen(entry: DetailEntry, onBack: () -> Unit, onGoToSearch: (String) 
                 )
             } else {
                 CompositionLocalProvider(LocalBringIntoViewSpec provides noVerticalAutoScroll) {
-                Column(
+                org.moontechlab.selenetv.screen.detail.UnifiedDetailScrollColumn(
+                    scrollState = scrollState,
                     modifier = Modifier
                         .fillMaxSize()
                         .focusGroup()
@@ -797,7 +793,6 @@ fun DetailScreen(entry: DetailEntry, onBack: () -> Unit, onGoToSearch: (String) 
                                 }
                             }
                         }
-                        .verticalScroll(scrollState),
                 ) {
                     // 操作按钮行：两种 hero 布局共用，故抽成 lambda 传入
                     val actionsRowContent: @Composable () -> Unit = {
