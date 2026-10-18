@@ -42,6 +42,9 @@ import org.moontechlab.selenetv.screen.player.PlayerScreen
 import org.moontechlab.selenetv.screen.player.PlayerLaunch
 import org.moontechlab.selenetv.screen.detail.HeroInfo
 import org.moontechlab.selenetv.screen.detail.DetailHero
+import org.moontechlab.selenetv.screen.detail.DetailActionButtons
+import org.moontechlab.selenetv.screen.detail.DetailSourcesSection
+import org.moontechlab.selenetv.screen.detail.EpisodePickerDialog
 import org.moontechlab.selenetv.screen.detail.sourceKey
 import org.moontechlab.selenetv.screen.DetailEntry
 import org.moontechlab.selenetv.model.SearchResult
@@ -180,15 +183,19 @@ private fun ShortDramaDetailPage(
     onPlayerExit: () -> Unit
 ) {
     val playFocus = remember(detail.id) { FocusRequester() }
-    val firstEpisodeFocus = remember(detail.id) { FocusRequester() }
-    val gridState = rememberLazyGridState()
+    var pickerOpen by remember(detail.id) { mutableStateOf(false) }
+    val detailSource = remember(detail) {
+        SearchResult(id = detail.id, title = detail.name, poster = detail.cover,
+            source = "shortdrama", sourceName = "短剧", episodes = detail.episodes.map { it.url },
+            episodesTitles = detail.episodes.map { it.title }, desc = detail.description, typeName = "短剧")
+    }
     LaunchedEffect(detail.id, playing) {
         if (!playing) {
             delay(120)
             runCatching { playFocus.requestFocus() }
         }
     }
-    BackHandler(enabled = !playing) { onBack() }
+    BackHandler(enabled = !playing && !pickerOpen) { onBack() }
     Box(
         Modifier.fillMaxSize()
             .background(Color(0xFF121216))
@@ -208,33 +215,33 @@ private fun ShortDramaDetailPage(
                     summary = detail.description.replace(Regex("<[^>]+>"), "").ifBlank { "暂无简介" }
                 ),
                 actionsRow = {
-                    Button(
-                        modifier = Modifier.focusRequester(playFocus),
-                        onClick = { onEpisode(0) }
-                    ) { Text("▶  播放") }
+                    DetailActionButtons(
+                        showContinue = false, showPlay = true, showDelete = false,
+                        showFavorite = false, isFavorite = false, sourceName = "短剧",
+                        onContinue = { onEpisode(0) }, onPlay = { onEpisode(0) },
+                        onDelete = {}, onToggleFavorite = {},
+                        primaryFocusRequester = playFocus
+                    )
                 }
             )
-            Text(
-                "选集   ${detail.episodeCount} 集",
-                color = Color.White, fontSize = 22.sp,
-                modifier = Modifier.padding(start = 58.dp, bottom = 16.dp)
+            DetailSourcesSection(
+                sources = listOf(detailSource),
+                selectedSourceKey = sourceKey(detailSource),
+                playRecords = emptyMap(),
+                progress = null,
+                complete = true,
+                onSelect = { pickerOpen = true },
+                onPlaySelected = { pickerOpen = true },
+                onSearch = { pickerOpen = true }
             )
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(8),
-                state = gridState,
-                modifier = Modifier.fillMaxWidth().weight(1f)
-                    .padding(start = 58.dp, end = 58.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(bottom = 35.dp)
-            ) {
-                items(detail.episodeCount) { index ->
-                    Button(
-                        modifier = if (index == 0) Modifier.focusRequester(firstEpisodeFocus) else Modifier,
-                        onClick = { onEpisode(index) }
-                    ) { Text("第${index + 1}集") }
-                }
-            }
+            EpisodePickerDialog(
+                visible = pickerOpen,
+                sourceName = detail.name,
+                episodes = detailSource.episodes,
+                episodesTitles = detailSource.episodesTitles,
+                onSelect = { idx -> pickerOpen = false; onEpisode(idx) },
+                onDismiss = { pickerOpen = false }
+            )
         }
         if (playing) {
             var playableUrls by remember(detail.id) { mutableStateOf<List<String>?>(null) }
