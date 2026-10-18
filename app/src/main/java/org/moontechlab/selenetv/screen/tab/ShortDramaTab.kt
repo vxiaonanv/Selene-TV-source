@@ -180,6 +180,7 @@ fun ShortDramaTab(
                         }
                     },
                     focusRequester = focusRequester,
+                    directFocusToSelected = true,
                     modifier = Modifier.onPreviewKeyEvent { event ->
                         if (event.type == KeyEventType.KeyDown && event.key == Key.DirectionDown && dramas.isNotEmpty()) {
                             posterFocus.requestFocus()
