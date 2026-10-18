@@ -384,11 +384,14 @@ fun DetailScreen(entry: DetailEntry, onBack: () -> Unit, onGoToSearch: (String) 
             try {
                 SpeedTestService.testAll(testable) { key, result ->
                     acc[key] = result
-                    // 测速期间只更新角标，不改变 LazyRow 的 item 顺序。
-                    // 焦点所在卡片在测试中移动可能导致 Compose TV 焦点失效甚至崩溃。
+                    // 保留测速完成后的实时排名动画，同时保留异常保护。
+                    // 只在主线程更新 UI，按稳定 source key 维护卡片身份。
                     scope.launch(Dispatchers.Main) {
                         if (state.speedTesting) {
-                            state = state.copy(speedResults = HashMap(acc))
+                            val snap = HashMap(acc)
+                            val maxSpeed = SpeedTestService.maxSpeed(snap.values)
+                            val ranked = state.sources.sortedByDescending { src -> speedRank(snap[sourceKey(src)], maxSpeed) }
+                            state = state.copy(speedResults = snap, sources = ranked)
                         }
                     }
                 }
