@@ -61,7 +61,11 @@ import org.moontechlab.selenetv.model.SearchResult
 private val preferred = listOf("女频恋爱", "反转爽剧", "古装仙侠", "年代穿越", "脑洞悬疑", "现代都市", "AI短剧")
 
 @Composable
-fun ShortDramaTab(focusRequester: FocusRequester = remember { FocusRequester() }) {
+fun ShortDramaTab(
+    focusRequester: FocusRequester = remember { FocusRequester() },
+    openDramaId: String? = null,
+    onOpenDramaConsumed: () -> Unit = {}
+) {
     val scope = rememberCoroutineScope()
     var categories by remember { mutableStateOf<List<DramaCategory>>(emptyList()) }
     var selected by remember { mutableStateOf<DramaCategory?>(null) }
@@ -85,6 +89,13 @@ fun ShortDramaTab(focusRequester: FocusRequester = remember { FocusRequester() }
             runCatching { posterFocus.requestFocus() }
             returnToPoster = false
         }
+    }
+
+    LaunchedEffect(openDramaId) {
+        val id = openDramaId ?: return@LaunchedEffect
+        try { detail = ShortDramaService.detail(id) }
+        catch (e: Exception) { error = e.message ?: "短剧详情加载失败" }
+        finally { onOpenDramaConsumed() }
     }
 
     LaunchedEffect(Unit) {
