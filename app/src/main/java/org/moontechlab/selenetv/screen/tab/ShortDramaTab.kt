@@ -70,6 +70,18 @@ fun ShortDramaTab(focusRequester: FocusRequester = remember { FocusRequester() }
     var playing by remember { mutableStateOf(false) }
     var episode by remember { mutableIntStateOf(0) }
     val gridState = rememberLazyGridState()
+    val cache = remember { mutableStateMapOf<String, Pair<List<DramaItem>, Boolean>>() }
+    val cachedPages = remember { mutableStateMapOf<String, Int>() }
+    var posterId by remember { mutableStateOf<String?>(null) }
+    val posterFocus = remember { FocusRequester() }
+    var returnToPoster by remember { mutableStateOf(false) }
+    LaunchedEffect(detail) {
+        if (detail == null && returnToPoster) {
+            delay(160)
+            runCatching { posterFocus.requestFocus() }
+            returnToPoster = false
+        }
+    }
 
     LaunchedEffect(Unit) {
         try {
@@ -82,34 +94,54 @@ fun ShortDramaTab(focusRequester: FocusRequester = remember { FocusRequester() }
         } catch (e: Exception) { error = e.message ?: "分类加载失败" }
     }
 
-    LaunchedEffect(selected) {
+    LaunchedEffect(selected?.id) {
         val cat = selected ?: return@LaunchedEffect
-        dramas = emptyList()
-        page = 1
-        hasMore = false
-        loading = true
+        val key = cat.id.toString()
         error = null
+        val saved = cache[key]
+        if (saved != null) {
+            dramas = saved.first
+            hasMore = saved.second
+            page = cachedPages[key] ?: 1
+            loading = false
+            return@LaunchedEffect
+        }
+        loading = true
         try {
             val result = ShortDramaService.list(cat.id, 1)
+            cache[key] = result
+            cachedPages[key] = 1
             dramas = result.first
+            page = 1
             hasMore = result.second
-            if (dramas.isEmpty()) error = "该分类暂无内容"
-        } catch (e: Exception) { error = e.message ?: "短剧列表加载失败" }
-        finally { loading = false }
+            if (result.first.isEmpty()) error = "该分类暂无内容"
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            error = e.message ?: "短剧列表加载失败"
+        } finally { loading = false }
     }
 
     fun loadMore() {
         val cat = selected ?: return
+        val key = cat.id.toString()
         if (loading || !hasMore) return
         loading = true
         scope.launch {
             try {
-                val result = ShortDramaService.list(cat.id, page + 1)
-                dramas = (dramas + result.first).distinctBy { it.id }
-                page++
-                hasMore = result.second
-            } catch (e: Exception) { error = e.message }
-            finally { loading = false }
+                val next = (cachedPages[key] ?: 1) + 1
+                val result = ShortDramaService.list(cat.id, next)
+                val merged = (cache[key]?.first.orEmpty() + result.first).distinctBy { it.id }
+                cache[key] = merged to result.second
+                cachedPages[key] = next
+                if (selected?.id == cat.id) {
+                    dramas = merged
+                    page = next
+                    hasMore = result.second
+                }
+            } catch (e: Exception) {
+                if (selected?.id == cat.id) error = e.message
+            } finally { loading = false }
         }
     }
 
@@ -119,13 +151,19 @@ fun ShortDramaTab(focusRequester: FocusRequester = remember { FocusRequester() }
                 FilterSelector(
                     options = categories.map { FilterOption(it.id.toString(), it.name) },
                     selectedKey = selected?.id?.toString().orEmpty(),
-                    onSelect = { key -> selected = categories.firstOrNull { it.id.toString() == key } },
+                    onSelect = { key ->
+                        val next = categories.firstOrNull { it.id.toString() == key }
+                        if (next?.id != selected?.id) {
+                            selected = next
+                            posterId = null
+                            scope.launch { gridState.scrollToItem(0) }
+                        }
+                    },
                     focusRequester = focusRequester
                 )
             }
             Spacer(Modifier.height(20.dp))
             if (error != null) Text(error ?: "", color = Color.White)
-            if (loading && dramas.isEmpty()) Text("正在加载短剧…", color = Color.White)
             LazyVerticalGrid(
                 columns = GridCells.Fixed(6),
                 state = gridState,
@@ -144,7 +182,10 @@ fun ShortDramaTab(focusRequester: FocusRequester = remember { FocusRequester() }
                             searchTitle = item.name
                         ),
                         from = VideoCardSource.SOURCE,
+                        modifier = Modifier.then(if (item.id == (posterId ?: dramas.firstOrNull()?.id)) Modifier.focusRequester(posterFocus) else Modifier)
+                            .onFocusChanged { if (it.isFocused) posterId = item.id },
                         onClick = {
+                            posterId = item.id
                             scope.launch {
                                 try { detail = ShortDramaService.detail(item.id) }
                                 catch (e: Exception) { error = e.message ?: "详情加载失败" }
@@ -170,7 +211,7 @@ fun ShortDramaTab(focusRequester: FocusRequester = remember { FocusRequester() }
                     playing = playing,
                     episode = episode,
                     onEpisode = { index -> episode = index; playing = true },
-                    onBack = { detail = null },
+                    onBack = { returnToPoster = true; detail = null },
                     onPlayerExit = { playing = false }
                 )
             }
