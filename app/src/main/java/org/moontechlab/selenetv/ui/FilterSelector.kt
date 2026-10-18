@@ -71,9 +71,12 @@ fun FilterSelector(
             .then(if (directFocusToSelected) Modifier else Modifier.focusRequester(focusRequester))
             .onFocusChanged { focusState ->
                 // 当组件从无焦点变为有焦点时，请求焦点到当前选中项
-                if (!hadFocus && focusState.hasFocus) {
-                    (if (directFocusToSelected) focusRequester else focusRequesters[selectedKey])?.requestFocus()
+                if (!hadFocus && focusState.hasFocus && !directFocusToSelected) {
+                    // 普通筛选栏仍沿用原有的选中项恢复逻辑。
+                    focusRequesters[selectedKey]?.requestFocus()
                 }
+                // 短剧模式下外部请求器已直接绑定到选中的按钮；
+                // 不要在容器获得焦点时再次请求同一个焦点，避免嵌套重入。
                 if (!hadFocus && focusState.hasFocus) onFocusEntered?.invoke()
                 hadFocus = focusState.hasFocus
             }
