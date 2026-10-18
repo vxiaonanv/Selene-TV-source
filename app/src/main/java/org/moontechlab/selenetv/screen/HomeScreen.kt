@@ -45,6 +45,7 @@ fun HomeScreen(navController: androidx.navigation.NavController) {
 
     // 详情页作为覆盖层渲染（而非导航目的地），首页组合保持存活 → 数据与焦点不丢失。
     var detailEntry by remember { mutableStateOf<DetailEntry?>(null) }
+    var pendingShortDramaId by remember { mutableStateOf<String?>(null) }
 
     var liveLaunch by remember { mutableStateOf<org.moontechlab.selenetv.screen.player.LiveLaunch?>(null) }
 
@@ -66,7 +67,12 @@ fun HomeScreen(navController: androidx.navigation.NavController) {
     // 返回目标由被点击的 VideoCard 自行记录（setTarget），保证 key 唯一且与匹配一致
     val openDetail: (VideoInfo) -> Unit = remember {
         { video ->
-            detailEntry = detailEntryFor(video)
+            if (video.source == "shortdrama") {
+                pendingShortDramaId = video.id
+                selectedTabId = "shortdrama"
+            } else {
+                detailEntry = detailEntryFor(video)
+            }
         }
     }
 
@@ -284,6 +290,8 @@ fun HomeScreen(navController: androidx.navigation.NavController) {
                 )
                 "shortdrama" -> ShortDramaTab(
                     focusRequester = shortDramaCategoryFocusRequester,
+                    openDramaId = pendingShortDramaId,
+                    onOpenDramaConsumed = { pendingShortDramaId = null },
                 )
                 "settings" -> key(homeRefreshKey) {
                     SettingsTab(
