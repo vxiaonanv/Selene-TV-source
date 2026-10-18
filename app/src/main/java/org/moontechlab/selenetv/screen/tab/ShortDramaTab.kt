@@ -87,9 +87,6 @@ fun ShortDramaTab(
     val cachedPages = remember { mutableStateMapOf<String, Int>() }
     var posterId by remember { mutableStateOf<String?>(null) }
     val posterFocus = remember { FocusRequester() }
-    // 分类栏获得焦点后，本次向下导航必须由新的按键触发；
-    // 防止封面返回顶部后同一按键的重复分发又落回封面。
-    var categoryJustEntered by remember { mutableStateOf(false) }
     var returnToPoster by remember { mutableStateOf(false) }
     LaunchedEffect(detail) {
         if (detail == null && returnToPoster) {
@@ -183,23 +180,9 @@ fun ShortDramaTab(
                         }
                     },
                     focusRequester = focusRequester,
-                    directFocusToSelected = true,
-                    onFocusEntered = { categoryJustEntered = true },
-                    modifier = Modifier.onPreviewKeyEvent { event ->
-                        if (event.key == Key.DirectionDown) {
-                            if (event.type == KeyEventType.KeyUp) {
-                                categoryJustEntered = false
-                                false
-                            } else if (event.type == KeyEventType.KeyDown) {
-                                if (categoryJustEntered) {
-                                    true
-                                } else if (dramas.isNotEmpty()) {
-                                    posterFocus.requestFocus()
-                                    true
-                                } else true
-                            } else false
-                        } else false
-                    }
+                    directFocusToSelected = true
+                    // 这里不拦截向下键：让 Compose 在下一次独立按键时
+                    // 自然从分类按钮移动到下方封面，避免同一按键被连续转发。
                 )
             }
             Spacer(Modifier.height(20.dp))
