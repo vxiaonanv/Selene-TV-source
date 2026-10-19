@@ -1,6 +1,5 @@
 package org.moontechlab.selenetv.service.danmaku
 
-import org.json.JSONObject
 import org.moontechlab.selenetv.hongguo.HongguoComments
 import org.moontechlab.selenetv.model.DanmakuComment
 import okhttp3.OkHttpClient
