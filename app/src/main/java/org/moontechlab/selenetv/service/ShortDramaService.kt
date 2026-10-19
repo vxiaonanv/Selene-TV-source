@@ -9,6 +9,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import org.moontechlab.selenetv.hongguo.HongguoComments
+import org.moontechlab.selenetv.hongguo.HongguoStreamResolver
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
@@ -99,7 +100,14 @@ object ShortDramaService {
             vids.mapIndexed { index,vid -> DramaEpisode("第${index+1}集","hongguo:$vid") })
     }
     suspend fun playUrl(id:String,episodeIndex:Int,name:String,directUrl:String=""):String = withContext(Dispatchers.IO) {
-        // Playback adapter is intentionally not fabricated. Actual signed playback is implemented next.
-        error("红果客户端播放解析尚未接入，请勿将该版本作为可播放正式版")
+        val vid=if(directUrl.startsWith("hongguo:")) directUrl.removePrefix("hongguo:") else {
+            require(idPattern.matches(id)) { "无效红果短剧 ID" }
+            HongguoStreamResolver.fetchEpisodeVids(id).getOrNull(episodeIndex) ?: error("未找到第${episodeIndex+1}集")
+        }
+        val info=HongguoStreamResolver.resolve(vid)
+        val url=info["url"] as? String ?: error("红果没有返回播放地址")
+        if(!url.startsWith("https://") && !url.startsWith("http://"))error("播放地址格式异常")
+        // For DRM-encrypted streams a separate Media3 data source may still be needed.
+        url
     }
 }
