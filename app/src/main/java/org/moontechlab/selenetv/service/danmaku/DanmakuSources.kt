@@ -16,6 +16,7 @@ object DanmakuSources {
     )
 
     val ALL: List<Def> = listOf(
+        Def("hongguo", "红果短剧", false, ::HongguoDanmakuSource),
         Def("bilibili", "哔哩哔哩", true, ::BilibiliDanmakuSource),
         Def("tencent", "腾讯视频", true, ::TencentDanmakuSource),
         Def("iqiyi", "爱奇艺", true, ::IqiyiDanmakuSource),
