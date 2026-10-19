@@ -3,7 +3,7 @@ name: Build Selene-TV APK
 on:
   workflow_dispatch:
   push:
-    branches: [master, feature/1.4.8-shortdrama, feature/1.4.8-stable-detail-fix, feature/1.4.9-speedtest-layout-fix]
+    branches: [master, feature/1.4.8-shortdrama, feature/1.4.8-stable-detail-fix, feature/1.4.9-speedtest-layout-fix, feature/1.5.0-hongguo-client]
     paths:
       - 'app/**'
       - '.github/workflows/build-apk.yml'
@@ -30,6 +30,6 @@ jobs:
       - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: Selene-TV-v1.4.9-APKs
+          name: Selene-TV-v1.5.0-test-APKs
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
