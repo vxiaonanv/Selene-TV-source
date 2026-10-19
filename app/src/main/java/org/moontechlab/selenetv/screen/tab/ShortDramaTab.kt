@@ -387,18 +387,10 @@ private fun ShortDramaDetailPage(
         }
         }
         if (playing) {
-            var playableUrls by remember(detail.id) { mutableStateOf<List<String>?>(null) }
-            var playError by remember(detail.id) { mutableStateOf<String?>(null) }
-            LaunchedEffect(detail.id, playing) {
-                if (!playing) return@LaunchedEffect
-                playableUrls = null
-                playError = null
-                try {
-                    playableUrls = (0 until detail.episodeCount).map { idx ->
-                        ShortDramaService.playUrl(detail.id, idx, detail.name, detail.episodes.getOrNull(idx)?.url.orEmpty())
-                    }
-                } catch (e: Exception) { playError = e.message ?: "播放地址解析失败" }
-            }
+            // Pass unresolved Hongguo episode IDs through to PlayerScreen.
+            // Resolving every episode before entering playback stalls on long series.
+            val playableUrls = remember(detail) { detail.episodes.map { it.url } }
+            val playError: String? = null
             val source = remember(detail, playableUrls) {
                 SearchResult(
                     id = detail.id,
