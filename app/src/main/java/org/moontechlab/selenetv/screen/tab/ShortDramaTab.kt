@@ -346,6 +346,10 @@ private fun ShortDramaDetailPage(
                     summary = detail.description.replace(Regex("<[^>]+>"), "").ifBlank { "暂无简介" }
                 ),
                 actionsRow = {
+                    // 与电影详情页一致：焦点从播放源/测速区回到操作按钮时，页面滚回顶部。
+                    Box(Modifier.onFocusChanged {
+                        if (it.hasFocus) detailScope.launch { detailScroll.animateScrollTo(0) }
+                    }) {
                     DetailActionButtons(
                         showContinue = playRecord != null, showPlay = true, showDelete = playRecord != null,
                         showFavorite = true, isFavorite = favorite, sourceName = "短剧",
@@ -360,6 +364,7 @@ private fun ShortDramaDetailPage(
                         onToggleFavorite = { toggleFavorite() },
                         primaryFocusRequester = playFocus
                     )
+                    }
                 }
             )
             Box(Modifier.onFocusChanged { if (it.hasFocus) detailScope.launch { detailScroll.animateScrollTo(detailScroll.maxValue) } }) {
