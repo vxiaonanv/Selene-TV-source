@@ -291,9 +291,11 @@ fun PlayerScreen(launch: PlayerLaunch, onExit: () -> Unit, modifier: Modifier = 
             } catch (e: kotlinx.coroutines.CancellationException) {
                 if (e is kotlinx.coroutines.TimeoutCancellationException) {
                     android.util.Log.e("HongguoPlayback", "播放地址解析超时，第${index + 1}集", e)
+                    android.widget.Toast.makeText(context, "红果第${index + 1}集解析超时，请重试", android.widget.Toast.LENGTH_LONG).show()
                 } else throw e
             } catch (e: Exception) {
                 android.util.Log.e("HongguoPlayback", "获取第${index + 1}集播放地址失败: ${e.message}", e)
+                android.widget.Toast.makeText(context, "红果播放地址获取失败：${e.message ?: "未知原因"}", android.widget.Toast.LENGTH_LONG).show()
             }
         }
     }
