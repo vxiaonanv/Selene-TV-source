@@ -110,12 +110,11 @@ object ShortDramaService {
         // A URL alone is not a playable clear stream when the provider returns a content key.
         // Fail explicitly instead of passing encrypted samples to ExoPlayer (Invalid NAL length).
         val key = (info["decryptionKey"] as? String).orEmpty()
-        val keys = info["keys"] as? Map<*, *>
-        if (key.isNotBlank() || (keys?.isNotEmpty() == true)) {
-            android.util.Log.w("HongguoPlayback", "加密媒体流：需要供应商授权的 Media3 DRM/数据源；vid=$vid")
-            error("此集为受保护的视频流，当前播放器缺少获授权的解密/DRM支持")
+        if (key.isNotBlank()) {
+            android.util.Log.w("HongguoPlayback", "当前画质包含加密标记；vid=$vid")
+            error("当前画质包含加密标记，播放器未配置相应的授权解密支持")
         }
-        android.util.Log.i("HongguoPlayback", "未标记加密的视频地址已解析，vid=$vid, path=${runCatching { java.net.URI(url).path.substringAfterLast('.') }.getOrDefault("unknown")}")
+        android.util.Log.i("HongguoPlayback", "选定画质未返回加密标记，vid=$vid")
         url
     }
 }
