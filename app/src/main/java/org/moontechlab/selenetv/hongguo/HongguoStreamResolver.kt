@@ -486,7 +486,9 @@ object HongguoStreamResolver {
                     val targetQuality = qualityList.firstOrNull { it <= maxQuality } ?: qualityList.first()
                     val targetLabel = "${targetQuality}P"
                     val primaryUrl = multiMap[targetLabel] ?: multiMap.values.first()
-                    val primaryKey = keysMap[targetLabel] ?: fallbackKey
+                    // Only expose a key associated with the selected quality.
+                    // A key for a different rendition does not prove the selected stream is encrypted.
+                    val primaryKey = keysMap[targetLabel].orEmpty()
 
                     multiMap["自动"] = primaryUrl
 
