@@ -185,7 +185,8 @@ fun ShortDramaTab(
     }
 
     Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize().padding(top = 56.dp, start = 58.dp, end = 58.dp)) {
+        // 对齐电影频道分类行：56dp 顶部预留 + 6dp 筛选区顶部间距。
+        Column(Modifier.fillMaxSize().padding(top = 62.dp, start = 58.dp, end = 58.dp)) {
             if (categories.isNotEmpty()) {
                 FilterSelector(
                     options = categories.map { FilterOption(it.id.toString(), it.name) },
