@@ -282,7 +282,7 @@ fun PlayerScreen(launch: PlayerLaunch, onExit: () -> Unit, modifier: Modifier = 
                     // Resolve only the selected episode on IO; never block TV UI rendering.
                     kotlinx.coroutines.withTimeout(35000L) {
                         org.moontechlab.selenetv.service.ShortDramaService.playUrl(
-                            src.id, index, src.title, raw
+                            src?.id.orEmpty(), index, src?.title.orEmpty(), raw
                         )
                     }
                 } else raw
