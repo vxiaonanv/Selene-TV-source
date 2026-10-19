@@ -10,6 +10,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.moontechlab.selenetv.hongguo.HongguoComments
 import org.moontechlab.selenetv.hongguo.HongguoStreamResolver
+import org.moontechlab.selenetv.hongguo.HongguoMediaProbe
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
@@ -126,6 +127,8 @@ object ShortDramaService {
             "HongguoPlayback",
             "stream diagnostic: quality=$quality, variants=$variants, urlPathType=$mediaTypeHint, keyHint=${key.isNotBlank()}"
         )
+        // Probe only a few bytes; never log the signed URL or the media payload.
+        HongguoMediaProbe.probe(url)
         if (key.isNotBlank()) {
             // Do not send potentially protected samples to a clear-only Media3 data source.
             // Actual encryption and supported license path require further verification.
