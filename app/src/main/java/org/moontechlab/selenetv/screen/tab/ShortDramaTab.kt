@@ -67,8 +67,6 @@ import org.moontechlab.selenetv.screen.detail.sourceKey
 import org.moontechlab.selenetv.screen.DetailEntry
 import org.moontechlab.selenetv.model.SearchResult
 
-private val preferred = listOf("女频恋爱", "反转爽剧", "古装仙侠", "年代穿越", "脑洞悬疑", "现代都市", "AI短剧")
-
 @Composable
 fun ShortDramaTab(
     focusRequester: FocusRequester = remember { FocusRequester() },
@@ -110,11 +108,9 @@ fun ShortDramaTab(
     LaunchedEffect(Unit) {
         try {
             val fetched = ShortDramaService.categories()
-            categories = fetched.sortedWith(compareBy { cat ->
-                preferred.indexOfFirst { cat.name.contains(it, ignoreCase = true) }.let { if (it == -1) 100 else it }
-            })
+            categories = fetched
             selected = categories.firstOrNull()
-            if (categories.isEmpty()) error = "服务端未返回短剧分类，请检查短剧源"
+            if (categories.isEmpty()) error = "红果短剧分类暂不可用"
         } catch (e: Exception) { error = e.message ?: "分类加载失败" }
     }
 
