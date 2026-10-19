@@ -107,14 +107,30 @@ object ShortDramaService {
         val info=HongguoStreamResolver.resolve(vid)
         val url=info["url"] as? String ?: error("红果没有返回播放地址")
         if(!url.startsWith("https://") && !url.startsWith("http://"))error("播放地址格式异常")
-        // A URL alone is not a playable clear stream when the provider returns a content key.
-        // Fail explicitly instead of passing encrypted samples to ExoPlayer (Invalid NAL length).
+        // Diagnostic metadata only: never log signed URLs, token query strings or derived keys.
+        // A spade_a-derived key is a protection *hint*, not proof of DRM or encrypted samples.
         val key = (info["decryptionKey"] as? String).orEmpty()
+        val quality = (info["quality"] as? String).orEmpty()
+        val variants = (info["qualities"] as? List<*>)?.size ?: 0
+        val mediaTypeHint = try {
+            val path = java.net.URI(url).path.orEmpty().lowercase()
+            when {
+                path.endsWith(".m3u8") -> "hls"
+                path.endsWith(".mpd") -> "dash"
+                path.endsWith(".mp4") -> "mp4"
+                path.endsWith(".m4s") -> "fragment"
+                else -> "unknown"
+            }
+        } catch (_: Exception) { "unknown" }
+        android.util.Log.i(
+            "HongguoPlayback",
+            "stream diagnostic: quality=$quality, variants=$variants, urlPathType=$mediaTypeHint, keyHint=${key.isNotBlank()}"
+        )
         if (key.isNotBlank()) {
-            android.util.Log.w("HongguoPlayback", "当前画质包含加密标记；vid=$vid")
-            error("当前画质包含加密标记，播放器未配置相应的授权解密支持")
+            // Do not send potentially protected samples to a clear-only Media3 data source.
+            // Actual encryption and supported license path require further verification.
+            error("当前画质返回内容保护相关标记，尚未确认媒体格式及所需播放支持")
         }
-        android.util.Log.i("HongguoPlayback", "选定画质未返回加密标记，vid=$vid")
         url
     }
 }
