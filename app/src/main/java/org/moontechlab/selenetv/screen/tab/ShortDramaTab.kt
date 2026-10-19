@@ -3,6 +3,9 @@ package org.moontechlab.selenetv.screen.tab
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.foundation.relocation.BringIntoViewSpec
+import androidx.compose.foundation.relocation.LocalBringIntoViewSpec
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.focus.onFocusChanged
@@ -181,7 +184,7 @@ fun ShortDramaTab(
     }
 
     Box(Modifier.fillMaxSize()) {
-        Column(Modifier.fillMaxSize().padding(top = 66.dp, start = 54.dp, end = 54.dp)) {
+        Column(Modifier.fillMaxSize().padding(top = 56.dp, start = 58.dp, end = 58.dp)) {
             if (categories.isNotEmpty()) {
                 FilterSelector(
                     options = categories.map { FilterOption(it.id.toString(), it.name) },
@@ -208,7 +211,8 @@ fun ShortDramaTab(
                 modifier = Modifier.fillMaxSize(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalArrangement = Arrangement.spacedBy(22.dp),
-                contentPadding = PaddingValues(bottom = 90.dp)
+                // 为首排封面 1.1 倍聚焦动画预留顶部空间，防止被 LazyGrid 裁剪。
+                contentPadding = PaddingValues(top = 18.dp, bottom = 90.dp)
             ) {
                 itemsIndexed(dramas, key = { _, item -> item.id }) { index, item ->
                     VideoCard(
@@ -310,6 +314,13 @@ private fun ShortDramaDetailPage(
         if (!playing) {
             delay(120)
             runCatching { playFocus.requestFocus() }
+            detailScroll.scrollTo(0)
+        }
+    }
+    // 与电影详情页一致：禁止焦点自动把 Hero 推出屏幕顶部。
+    val noVerticalAutoScroll = remember {
+        object : BringIntoViewSpec {
+            override fun calculateScrollDistance(offset: Float, size: Float, containerSize: Float) = 0f
         }
     }
     BackHandler(enabled = !playing && !pickerOpen) { onBack() }
@@ -318,6 +329,7 @@ private fun ShortDramaDetailPage(
             .background(UnifiedDetailBackground)
             .focusGroup()
     ) {
+        CompositionLocalProvider(LocalBringIntoViewSpec provides noVerticalAutoScroll) {
         UnifiedDetailScrollColumn(modifier = Modifier.fillMaxSize(), scrollState = detailScroll) {
             DetailHero(
                 entry = DetailEntry.History(
@@ -368,6 +380,7 @@ private fun ShortDramaDetailPage(
                 onSelect = { idx -> pickerOpen = false; onEpisode(idx) },
                 onDismiss = { pickerOpen = false }
             )
+        }
         }
         if (playing) {
             var playableUrls by remember(detail.id) { mutableStateOf<List<String>?>(null) }
