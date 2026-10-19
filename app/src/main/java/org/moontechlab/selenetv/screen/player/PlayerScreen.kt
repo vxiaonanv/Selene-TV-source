@@ -277,8 +277,24 @@ fun PlayerScreen(launch: PlayerLaunch, onExit: () -> Unit, modifier: Modifier = 
         val src = launch.sources.firstOrNull { sourceKey(it) == currentSourceKey } ?: launch.selectedSource
         val raw = src?.episodes?.getOrNull(index) ?: return
         scope.launch {
-            val proxy = org.moontechlab.selenetv.service.AppDataService.getM3u8ProxyUrl()
-            controller.load(PlayProgress.buildPlayUrl(raw, proxy), startMs)
+            try {
+                val resolved = if (raw.startsWith("hongguo:")) {
+                    // Resolve only the selected episode on IO; never block TV UI rendering.
+                    kotlinx.coroutines.withTimeout(35000L) {
+                        org.moontechlab.selenetv.service.ShortDramaService.playUrl(
+                            src.id, index, src.title, raw
+                        )
+                    }
+                } else raw
+                val proxy = org.moontechlab.selenetv.service.AppDataService.getM3u8ProxyUrl()
+                controller.load(PlayProgress.buildPlayUrl(resolved, proxy), startMs)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                if (e is kotlinx.coroutines.TimeoutCancellationException) {
+                    android.util.Log.e("HongguoPlayback", "播放地址解析超时，第${index + 1}集", e)
+                } else throw e
+            } catch (e: Exception) {
+                android.util.Log.e("HongguoPlayback", "获取第${index + 1}集播放地址失败: ${e.message}", e)
+            }
         }
     }
 
