@@ -107,7 +107,15 @@ object ShortDramaService {
         val info=HongguoStreamResolver.resolve(vid)
         val url=info["url"] as? String ?: error("红果没有返回播放地址")
         if(!url.startsWith("https://") && !url.startsWith("http://"))error("播放地址格式异常")
-        // For DRM-encrypted streams a separate Media3 data source may still be needed.
+        // A URL alone is not a playable clear stream when the provider returns a content key.
+        // Fail explicitly instead of passing encrypted samples to ExoPlayer (Invalid NAL length).
+        val key = (info["decryptionKey"] as? String).orEmpty()
+        val keys = info["keys"] as? Map<*, *>
+        if (key.isNotBlank() || (keys?.isNotEmpty() == true)) {
+            android.util.Log.w("HongguoPlayback", "加密媒体流：需要供应商授权的 Media3 DRM/数据源；vid=$vid")
+            error("此集为受保护的视频流，当前播放器缺少获授权的解密/DRM支持")
+        }
+        android.util.Log.i("HongguoPlayback", "未标记加密的视频地址已解析，vid=$vid, path=${runCatching { java.net.URI(url).path.substringAfterLast('.') }.getOrDefault("unknown")}")
         url
     }
 }
