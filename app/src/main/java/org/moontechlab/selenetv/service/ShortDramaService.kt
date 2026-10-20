@@ -11,6 +11,7 @@ import org.json.JSONObject
 import org.moontechlab.selenetv.hongguo.HongguoComments
 import org.moontechlab.selenetv.hongguo.HongguoStreamResolver
 import org.moontechlab.selenetv.hongguo.HongguoMediaProbe
+import org.moontechlab.selenetv.hongguo.HongguoPublicStreamResolver
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
 
@@ -105,35 +106,61 @@ object ShortDramaService {
             require(idPattern.matches(id)) { "无效红果短剧 ID" }
             HongguoStreamResolver.fetchEpisodeVids(id).getOrNull(episodeIndex) ?: error("未找到第${episodeIndex+1}集")
         }
-        val info=HongguoStreamResolver.resolve(vid)
-        val url=info["url"] as? String ?: error("红果没有返回播放地址")
-        if(!url.startsWith("https://") && !url.startsWith("http://"))error("播放地址格式异常")
-        // Diagnostic metadata only: never log signed URLs, token query strings or derived keys.
-        // A spade_a-derived key is a protection *hint*, not proof of DRM or encrypted samples.
-        val key = (info["decryptionKey"] as? String).orEmpty()
-        val quality = (info["quality"] as? String).orEmpty()
-        val variants = (info["qualities"] as? List<*>)?.size ?: 0
-        val mediaTypeHint = try {
-            val path = java.net.URI(url).path.orEmpty().lowercase()
-            when {
-                path.endsWith(".m3u8") -> "hls"
-                path.endsWith(".mpd") -> "dash"
-                path.endsWith(".mp4") -> "mp4"
-                path.endsWith(".m4s") -> "fragment"
-                else -> "unknown"
+
+        var protectedCount = 0
+        var appError: Exception? = null
+        try {
+            val info=HongguoStreamResolver.resolve(vid)
+            @Suppress("UNCHECKED_CAST")
+            val multiMap=(info["multiMap"] as? Map<String,String>).orEmpty()
+            @Suppress("UNCHECKED_CAST")
+            val keysMap=(info["keys"] as? Map<String,String>).orEmpty()
+            val qualities=(info["qualities"] as? List<*>)
+                ?.mapNotNull { (it as? Number)?.toInt() }
+                ?.distinct()
+                ?.sortedDescending()
+                .orEmpty()
+
+            // HD first: 1080P -> 720P -> 480P -> 360P (or any other returned quality).
+            for(q in qualities) {
+                val label="${q}P"
+                val candidate=multiMap[label].orEmpty()
+                if(candidate.isBlank()) continue
+                val key=keysMap[label].orEmpty()
+                if(key.isBlank()) {
+                    android.util.Log.i("HongguoPlayback","direct app stream selected: quality=$label, protected=false")
+                    return@withContext candidate
+                }
+                protectedCount++
             }
-        } catch (_: Exception) { "unknown" }
-        android.util.Log.i(
-            "HongguoPlayback",
-            "stream diagnostic: quality=$quality, variants=$variants, urlPathType=$mediaTypeHint, keyHint=${key.isNotBlank()}"
-        )
-        // Probe only a few bytes; never log the signed URL or the media payload.
-        HongguoMediaProbe.probe(url)
-        if (key.isNotBlank()) {
-            // Do not send potentially protected samples to a clear-only Media3 data source.
-            // Actual encryption and supported license path require further verification.
-            error("当前画质返回内容保护相关标记，尚未确认媒体格式及所需播放支持")
+
+            val selectedQuality=(info["quality"] as? String).orEmpty()
+            val selectedUrl=(info["url"] as? String).orEmpty()
+            val selectedKey=(info["decryptionKey"] as? String).orEmpty()
+            android.util.Log.i(
+                "HongguoPlayback",
+                "app streams unavailable for clear playback: selected=$selectedQuality, protectedVariants=$protectedCount, keyHint=${selectedKey.isNotBlank()}"
+            )
+
+            // Keep the bounded probe only as a last diagnostic hint; do not hand a protected stream to clear Media3.
+            if(selectedUrl.startsWith("http://") || selectedUrl.startsWith("https://")) {
+                HongguoMediaProbe.probe(selectedUrl)
+            }
+        } catch(e: Exception) {
+            appError=e
+            android.util.Log.w("HongguoPlayback","app stream resolution failed: ${e.javaClass.simpleName}")
         }
-        url
-    }
-}
+
+        // All App qualities were protected/unavailable: try the official website's public MP4s,
+        // always choosing the highest public quality actually exposed for this episode.
+        val publicStream=HongguoPublicStreamResolver.resolve(id,vid,episodeIndex)
+        if(publicStream!=null) {
+            android.util.Log.i("HongguoPlayback","playback fallback selected: public ${publicStream.quality}P")
+            return@withContext publicStream.url
+        }
+
+        if(protectedCount>0) {
+            error("当前高清源均带内容保护标记，官网也未提供本集可直接播放的公开高清版本")
+        }
+        throw appError ?: IllegalStateException("红果暂时没有可直接播放的视频流")
+    }}
